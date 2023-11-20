@@ -8,7 +8,7 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var cors = require('cors')
 var app = express();
-
+var portListen = ( process.env.PORT )  || 3000 ;
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -23,8 +23,8 @@ app.use('/', indexRouter);
 // app.use('/users', usersRouter);
 
 
-console.log("Port Running at ......" + process.env.PORT);
+console.log("Port Running at ......" + portListen);
 
-app.listen(process.env.PORT)
+app.listen(portListen)
 
 module.exports = app;
