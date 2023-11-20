@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
-let { userLoginDeatils, TbrEmployee } = require('../DB/db')
+let { userLoginDeatils, TbrEmployee, contactUs , notifyThem} = require('../DB/db')
 
 
 
@@ -246,6 +246,31 @@ router.post("/searchEmployee", (req, resp) => {
         "data": data,
         "message": "OK",
         "records_count": RecCount
+    })
+
+})
+
+
+// ContactUs post req notify
+router.post("/contactUs", (req, resp) => {
+
+    contactUs.push(req.body)
+    console.log(contactUs)
+    resp.status(200).json({
+        "message": `Thank you for Connecting , our helpdesk will reach out to you soon!!! Have a Nice Day`,
+         "status" : "OK"
+
+    })
+
+})
+
+router.post("/notify", (req, resp) => {
+
+    notifyThem.push(req.body)
+    console.log(notifyThem)
+    resp.status(200).json({
+        "message": `Thank you ${req.body.fullname} , AM_SOFT will connect with you soon. Have a Nice Day`,
+         "status" : "OK"
     })
 
 })

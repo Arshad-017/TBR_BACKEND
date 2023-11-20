@@ -1,4 +1,4 @@
-const userLoginDeatils = [
+var userLoginDeatils = [
     {
         fullName: "Arshad Firoj Mujawar",
         userName: "afirojmujawar",
@@ -18,7 +18,7 @@ const userLoginDeatils = [
 
 ];
 
-const TbrEmployee =
+var TbrEmployee =
 [
     {
         "emp_id": "TBRE1",
@@ -4868,8 +4868,43 @@ const TbrEmployee =
 ]
 
 
+var contactUs = [
+    {
+        fullName: "Arshad Firoj Mujawar",
+        message : "A Bug reported",
+        emailId: "afirojmujawar"
+        
+    },
+    {
+        fullName: "Noor Jaha",
+        message : "A Bug reported",
+        emailId: "noorjaha"
+        
+    },
+
+];
+
+
+var notifyThem = [
+    {
+        fullName: "Arshad Firoj Mujawar",
+        message : "A Bug reported",
+        emailId: "afirojmujawar",
+        subject : "",
+        
+    },
+    {
+        fullName: "Noor Jaha",
+        message : "A Bug reported",
+        emailId: "noorjaha",
+        subject : "",
+        
+    },
+
+];
+
 module.exports = {
-    TbrEmployee, userLoginDeatils
+    TbrEmployee, userLoginDeatils,contactUs,notifyThem
 }
 
 
