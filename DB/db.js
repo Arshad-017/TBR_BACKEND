@@ -5,7 +5,7 @@ var userLoginDeatils = [
         emailId: "afirojmujawar",
         phoneNumber: "7447231840",
         password: "tbrmig1",
-        gender: "Male"
+        gender: "male"
     },
     {
         fullName: "Noor Jaha",
@@ -13,7 +13,7 @@ var userLoginDeatils = [
         emailId: "noorjaha",
         phoneNumber: "8530416260",
         password: "noor123",
-        gender: "Female"
+        gender: "female"
     },
 
 ];
