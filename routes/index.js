@@ -6,11 +6,11 @@ let { userLoginDeatils, TbrEmployee } = require('../DB/db')
 
 
 
-
+// Authenticating user for Login
 router.get("/login", (req, resp) => {
 
-    var username = req.query.user;
-    var pass = req.query.pass;
+    var username = req.query.user.trim();
+    var pass = req.query.pass.trim();
     var flag = false;
     for (var i = 0; i < userLoginDeatils.length; i++) {
         var obj = userLoginDeatils[i];
@@ -34,6 +34,7 @@ router.get("/login", (req, resp) => {
 
 })
 
+// registerring to Website.... login user
 router.post("/registerUser", (req, resp) => {
 
     userLoginDeatils = [req.body, ...userLoginDeatils]
@@ -45,7 +46,7 @@ router.post("/registerUser", (req, resp) => {
 
 })
 
-
+// Getting details of all user - login - credentials 
 router.get("/getAllUsers", (req, resp) => {
 
     console.log(userLoginDeatils)
@@ -56,10 +57,15 @@ router.get("/getAllUsers", (req, resp) => {
 
 // get req for Employee Data 
 router.get("/view", (req, resp) => {
-    resp.status(200).json(TbrEmployee)
+    let respJson=[];
+    for(let i=0;i<TbrEmployee.length;i++){
+        if(TbrEmployee[i].DEL_IND=='N')
+            respJson.push(TbrEmployee[i]);
+    }
+    resp.status(200).json(respJson)
 })
 
-
+// Adding Employee to DataBase
 router.post("/add/addEmployee", (req, resp) => {
 
     totalrec = TbrEmployee.length + 1;
@@ -72,7 +78,7 @@ router.post("/add/addEmployee", (req, resp) => {
 
 })
 
-
+// Searching A Employee by emp_id
 router.get("/searchSpecificurl/:emp_id", (req, resp) => {
 
     let emp_id = req.params.emp_id;
@@ -91,8 +97,28 @@ router.get("/searchSpecificurl/:emp_id", (req, resp) => {
 
 })
 
+// Deleting A employee from DataBase
+router.post("/delete", (req, resp) => {
 
-// Upadting record in DB 
+    let emp_id = req.body.emp_id;
+    for (let i = 0; i < TbrEmployee.length; i++) {
+        if (TbrEmployee[i].emp_id == emp_id) {
+            TbrEmployee[i].DEL_IND='Y';
+            TbrEmployee[i].Comments=req.body.Comments;
+            console.log(TbrEmployee[i]);
+            break;
+        }
+    }
+    resp.status(200).json({
+        "message": `The Employee ${req.body.emp_id} is  Removed from TBR DataBase.....`,
+         "status" : "OK"
+
+    })
+
+})
+
+
+// Upadting record in DB  /delete
 router.post("/updateRecords", (req, resp) => {
     let message = "Data Not Found In DB"
     let emp_id = req.body.emp_id;
@@ -149,63 +175,68 @@ router.post("/searchEmployee", (req, resp) => {
     
     for (let i = 0; i < TbrEmployee.length; i++) {
         let entryMade = false;
-        if ((fname != null || fname != "") && (lname != null || lname != "")) {
-            if (fPre == "Start with" && lpre == "Start with") {
-                if (TbrEmployee[i].first_name.toLowerCase().startsWith(fname) && TbrEmployee[i].last_name.toLowerCase().startsWith(lname)) {
-                    data.push(TbrEmployee[i]);
-                    continue;
+        if(TbrEmployee[i].DEL_IND == 'Y')
+          continue;
+        else{
+            if ((fname != null || fname != "") && (lname != null || lname != "")) {
+                if (fPre == "Start with" && lpre == "Start with") {
+                    if (TbrEmployee[i].first_name.toLowerCase().startsWith(fname) && TbrEmployee[i].last_name.toLowerCase().startsWith(lname)) {
+                        data.push(TbrEmployee[i]);
+                        continue;
+                    }
                 }
-            }
-            else if (fPre == "Start with" && lpre == "Contains") {
-                if (TbrEmployee[i].first_name.toLowerCase().startsWith(fname) && TbrEmployee[i].last_name.toLowerCase().includes(lname)) {
-                    data.push(TbrEmployee[i]); continue;
+                else if (fPre == "Start with" && lpre == "Contains") {
+                    if (TbrEmployee[i].first_name.toLowerCase().startsWith(fname) && TbrEmployee[i].last_name.toLowerCase().includes(lname)) {
+                        data.push(TbrEmployee[i]); continue;
+                    }
                 }
-            }
-            else if (fPre == "Start with" && lpre == "Exact Match") {
-                if (TbrEmployee[i].first_name.toLowerCase().startsWith(fname) && TbrEmployee[i].last_name.toLowerCase() == (lname)) {
-                    data.push(TbrEmployee[i]); continue;
+                else if (fPre == "Start with" && lpre == "Exact Match") {
+                    if (TbrEmployee[i].first_name.toLowerCase().startsWith(fname) && TbrEmployee[i].last_name.toLowerCase() == (lname)) {
+                        data.push(TbrEmployee[i]); continue;
+                    }
                 }
-            }
-            else if (fPre == "Contains" && lpre == "Contains") {
-                if (TbrEmployee[i].first_name.toLowerCase().includes(fname) && TbrEmployee[i].last_name.toLowerCase().includes(lname)) {
-                    data.push(TbrEmployee[i]); continue;
+                else if (fPre == "Contains" && lpre == "Contains") {
+                    if (TbrEmployee[i].first_name.toLowerCase().includes(fname) && TbrEmployee[i].last_name.toLowerCase().includes(lname)) {
+                        data.push(TbrEmployee[i]); continue;
+                    }
                 }
-            }
-            else if (fPre == "Contains" && lpre == "Exact Match") {
-                if (TbrEmployee[i].first_name.toLowerCase().includes(fname) && TbrEmployee[i].last_name.toLowerCase() == (lname)) {
-                    data.push(TbrEmployee[i]); continue;
+                else if (fPre == "Contains" && lpre == "Exact Match") {
+                    if (TbrEmployee[i].first_name.toLowerCase().includes(fname) && TbrEmployee[i].last_name.toLowerCase() == (lname)) {
+                        data.push(TbrEmployee[i]); continue;
+                    }
                 }
-            }
-            else if (fPre == "Contains" && lpre == "Start with") {
-                if (TbrEmployee[i].first_name.toLowerCase().includes(fname) && TbrEmployee[i].last_name.toLowerCase().startsWith(lname)) {
-                    data.push(TbrEmployee[i]); continue;
+                else if (fPre == "Contains" && lpre == "Start with") {
+                    if (TbrEmployee[i].first_name.toLowerCase().includes(fname) && TbrEmployee[i].last_name.toLowerCase().startsWith(lname)) {
+                        data.push(TbrEmployee[i]); continue;
+                    }
                 }
-            }
-            else if (fPre == "Exact Match" && lpre == "Exact Match") {
-                if (TbrEmployee[i].first_name.toLowerCase() == (fname) && TbrEmployee[i].last_name.toLowerCase() == (lname)) {
-                    data.push(TbrEmployee[i]); continue;
+                else if (fPre == "Exact Match" && lpre == "Exact Match") {
+                    if (TbrEmployee[i].first_name.toLowerCase() == (fname) && TbrEmployee[i].last_name.toLowerCase() == (lname)) {
+                        data.push(TbrEmployee[i]); continue;
+                    }
                 }
-            }
-            else if (fPre == "Exact Match" && lpre == "Start with") {
-                if (TbrEmployee[i].first_name.toLowerCase() == (fname) && TbrEmployee[i].last_name.toLowerCase().startsWith(lname)) {
-                    data.push(TbrEmployee[i]); continue;
+                else if (fPre == "Exact Match" && lpre == "Start with") {
+                    if (TbrEmployee[i].first_name.toLowerCase() == (fname) && TbrEmployee[i].last_name.toLowerCase().startsWith(lname)) {
+                        data.push(TbrEmployee[i]); continue;
+                    }
                 }
-            }
-            else if (fPre == "Exact Match" && lpre == "Contains") {
-                if (TbrEmployee[i].first_name.toLowerCase().startsWith(fname) && TbrEmployee[i].last_name.toLowerCase().includes(lname)) {
-                    data.push(TbrEmployee[i]); continue;
+                else if (fPre == "Exact Match" && lpre == "Contains") {
+                    if (TbrEmployee[i].first_name.toLowerCase().startsWith(fname) && TbrEmployee[i].last_name.toLowerCase().includes(lname)) {
+                        data.push(TbrEmployee[i]); continue;
+                    }
                 }
+    
             }
-
+            if (emailId != null && emailId != "" && emailId == TbrEmployee[i].email.toLowerCase() && !entryMade) {
+                data.push(TbrEmployee[i]);
+                continue;
+            }
+            if (empId != null && empId != "" && empId == TbrEmployee[i].emp_id.toLowerCase() && !entryMade) {
+                data.push(TbrEmployee[i]);
+                continue;
+            }
         }
-        if (emailId != null && emailId != "" && emailId == TbrEmployee[i].email.toLowerCase() && !entryMade) {
-            data.push(TbrEmployee[i]);
-            continue;
-        }
-        if (empId != null && empId != "" && empId == TbrEmployee[i].emp_id.toLowerCase() && !entryMade) {
-            data.push(TbrEmployee[i]);
-            continue;
-        }
+        
     }
     let RecCount = data.length;
     console.log(RecCount)
