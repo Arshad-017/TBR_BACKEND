@@ -1,278 +1,426 @@
-var express = require('express');
+var express = require("express");
 var router = express.Router();
 
-let { userLoginDeatils, TbrEmployee, contactUs , notifyThem} = require('../DB/db')
 
-
-
+let {
+  userLoginDeatilsModel,
+  TbrEmployeeModel,
+  notifyThemModel,
+  contactUsModel,
+} = require("../DB_Connection/db");
 
 // Authenticating user for Login
-router.get("/login", (req, resp) => {
-
-    var username = req.query.user.trim();
-    var pass = req.query.pass.trim();
-    var flag = false;
-    for (var i = 0; i < userLoginDeatils.length; i++) {
-        var obj = userLoginDeatils[i];
-        if (obj.emailId == username && obj.password == pass) {
-            resp.status(200).json({
-                "status": "ok", "success": "true",
-                "message": `Id found in DataBase Welcome to TBR ${username}`,
-                "data": obj,
-            })
-            flag = true;
-            break;
-        }
-
-    }
-    if (flag == false) {
-        resp.status(200).json({
-            "status": "ok", "success": "false",
-            "message": "Failed to Authenticate user due to incorrect password or username"
-        })
-    }
-
-})
+router.get("/login", async (req, resp) => {
+  const data = await userLoginDeatilsModel.find({
+    emailId: req.query.user,
+    password: req.query.pass,
+  });
+  if (data.length > 0) {
+    resp.status(200).json({
+      status: "ok",
+      success: "true",
+      message: `Id found in DataBase Welcome to TBR ${data[0].userName}`,
+      data: data,
+    });
+  } else {
+    resp.status(200).json({
+      message: "No Data Found",
+      dataFound: 0,
+      success: "false",
+    });
+  }
+});
 
 // registerring to Website.... login user
-router.post("/registerUser", (req, resp) => {
-
-    userLoginDeatils = [req.body, ...userLoginDeatils]
-    console.log(userLoginDeatils)
-    resp.status(200).json({
-        "message": "Data Added Successfully !!",
-        "data": req.body,
-    })
-
-})
-
-// Getting details of all user - login - credentials 
-router.get("/getAllUsers", (req, resp) => {
-
-    console.log(userLoginDeatils)
-    resp.status(200).json(userLoginDeatils)
-
-})
-
-
-// get req for Employee Data 
-router.get("/view", (req, resp) => {
-    let respJson=[];
-    for(let i=0;i<TbrEmployee.length;i++){
-        if(TbrEmployee[i].DEL_IND=='N')
-            respJson.push(TbrEmployee[i]);
+router.post("/registerUser", async (req, resp) => {
+  try {
+    let test = await verifyExsistingEmail(req.body.emailId);
+    if (test) {
+      const data = await userLoginDeatilsModel.create(req.body);
+      console.log(data);
+      if (data.length != 0) {
+        resp.status(200).json({
+          message: "User has Successfully Registered to AM_S0FT!!",
+          data: data,
+          success: "true",
+          repeated: "false",
+        });
+      } else {
+        resp.status(200).json({
+          message:
+            "Some Error Occured At BackEnd .Try Contacting System Adminstrator",
+          success: "false",
+          repeated: "false",
+        });
+      }
+    } else {
+      resp.status(200).json({
+        message: "This Email is Already Taken, try using other....",
+        success: "true",
+        repeated: "true",
+      });
     }
-    resp.status(200).json(respJson)
-})
+  } catch (err) {
+    resp.status(500).json({
+      message:
+        "Some Error Occured At BackEnd .Try Contacting System Adminstrator",
+      success: "false",
+      repeated: "false",
+    });
+  }
+});
+
+// Getting details of all user - login - credentials
+//router.get("/getAllUsers", (req, resp) => {
+ // console.log(userLoginDeatils);
+ // resp.status(200).json(userLoginDeatils);
+//});
+
+// get req for Employee Data
+router.get("/view", async (req, resp) => {
+  try {
+    const data = await TbrEmployeeModel.find({ DEL_IND: { $ne: "Y" } });
+    if (data.length > 0) {
+      resp.status(200).json({
+        message: "Data Fetch from Db",
+        success: "true",
+        data: data,
+      });
+    } else {
+      resp.status(200).json({
+        message: "No Data in DataBase......",
+        success: "true",
+      });
+    }
+  } catch (err) {
+    resp.status(500).json({
+      message:
+        "Some Error Occured At BackEnd .Try Contacting System Adminstrator",
+      success: "false",
+    });
+  }
+});
 
 // Adding Employee to DataBase
-router.post("/add/addEmployee", (req, resp) => {
-
-    totalrec = TbrEmployee.length + 1;
-    req.body.emp_id = "TBRE" + totalrec;
-    TbrEmployee.push(req.body)
-    resp.status(200).json({
-        "message": `Employee ${req.body.emp_id} Added Successfully !!`,
-        "data": req.body,
-    })
-
-})
+router.post("/add/addEmployee", async (req, resp) => {
+  try {
+    let test = await verifyExsistingEmailTBREmployee(req.body.email);
+    if (test) {
+      let totalrec = await TbrEmployeeModel.find({});
+      totalrec = totalrec.length + 1;
+      req.body.emp_id = "TBRE" + totalrec;
+      const data = await TbrEmployeeModel.create(req.body);
+      console.log(data);
+      if (data.length != 0) {
+        resp.status(200).json({
+          message: `Employee ${req.body.emp_id} Added Successfully !!`,
+          data: data,
+          success: "true",
+          repeated: "false",
+        });
+      } else {
+        resp.status(200).json({
+          message:
+            "Some Error Occured At BackEnd .Try Contacting System Adminstrator",
+          success: "false",
+          repeated: "false",
+        });
+      }
+    } else {
+      resp.status(200).json({
+        message: "This Email is Already Taken, try using other....",
+        success: "true",
+        repeated: "true",
+      });
+    }
+  } catch (err) {
+    resp.status(500).json({
+      message:
+        "Some Error Occured At BackEnd .Try Contacting System Adminstrator",
+      success: "false",
+      repeated: "false",
+    });
+  }
+});
 
 // Searching A Employee by emp_id
-router.get("/searchSpecificurl/:emp_id", (req, resp) => {
-
-    let emp_id = req.params.emp_id;
-    let resultJson = [];
-    for (let i = 0; i < TbrEmployee.length; i++) {
-        if (TbrEmployee[i].emp_id == emp_id) {
-            resultJson.push(TbrEmployee[i]);
-            break;
-        }
+router.get("/searchSpecificurl/:emp_id", async (req, resp) => {
+  try {
+    let empId = req.params.emp_id.toUpperCase();
+    const data = await TbrEmployeeModel.find({ emp_id: empId });
+    if (data.length > 0) {
+      resp.status(200).json({
+        message: "Data Fetch from Db",
+        success: "true",
+        data: data,
+      });
+    } else {
+      resp.status(200).json({
+        message: "No Data in DataBase......",
+        success: "false",
+      });
     }
-    resp.status(200).json({
-        "message": `Data Found in Db`,
-        "data": resultJson
-
-    })
-
-})
+  } catch (err) {
+    resp.status(500).json({
+      message:
+        "Some Error Occured At BackEnd .Try Contacting System Adminstrator",
+      success: "false",
+    });
+  }
+});
 
 // Deleting A employee from DataBase
-router.post("/delete", (req, resp) => {
+router.post("/delete", async (req, resp) => {
+  try {
+    let empId = req.body.emp_id.toUpperCase();
 
+    const data = await TbrEmployeeModel.findOneAndUpdate(
+      { emp_id: empId, DEL_IND: { $ne: "Y" } },
+      { DEL_IND: "Y" }
+    );
+    if (data) {
+      resp.status(200).json({
+        message: `The Employee ${req.body.emp_id} is  Removed from TBR DataBase.....`,
+        success: "true",
+        status: "OK",
+        data: data,
+      });
+    } else {
+      resp.status(200).json({
+        message: "No Data in DataBase......",
+        success: "false",
+      });
+    }
+  } catch (err) {
+    resp.status(500).json({
+      message:
+        "Some Error Occured At BackEnd .Try Contacting System Adminstrator",
+      success: "false",
+    });
+  }
+});
+
+// Upadting record in DB
+router.post("/updateRecords", async (req, resp) => {
+  try {
+    let message = "Data Not Found In DB";
     let emp_id = req.body.emp_id;
-    for (let i = 0; i < TbrEmployee.length; i++) {
-        if (TbrEmployee[i].emp_id == emp_id) {
-            TbrEmployee[i].DEL_IND='Y';
-            TbrEmployee[i].Comments=req.body.Comments;
-            console.log(TbrEmployee[i]);
-            break;
-        }
+    let updateForm = req.body;
+    let data = await TbrEmployeeModel.findOneAndUpdate(
+      { emp_id: emp_id, DEL_IND: { $ne: "Y" } },
+      updateForm,
+      {
+        new: true,
+      }
+    );
+    if (data) {
+      message = `Details for Employee ${emp_id} are Updated Successfully`;
+      resp.status(200).json({
+        message: message,
+        success: "true",
+        status: "OK",
+        data: data,
+      });
+    } else {
+      resp.status(200).json({
+        message: message,
+        success: "false",
+      });
     }
-    resp.status(200).json({
-        "message": `The Employee ${req.body.emp_id} is  Removed from TBR DataBase.....`,
-         "status" : "OK"
+  } catch (err) {
+    resp.status(500).json({
+      message:
+        "Some Error Occured At BackEnd .Try Contacting System Adminstrator",
+      success: "false",
+    });
+  }
+});
 
-    })
+// Post Req for Search Employee Data  /searchSpecificurl
+router.post("/searchEmployee", async (req, resp) => {
+  console.log("Req Reached for /searchEmployee");
 
-})
-
-
-// Upadting record in DB  /delete
-router.post("/updateRecords", (req, resp) => {
-    let message = "Data Not Found In DB"
-    let emp_id = req.body.emp_id;
-    let resultJson = [];
-    for (let i = 0; i < TbrEmployee.length; i++) {
-        if (TbrEmployee[i].emp_id == emp_id) {
-            TbrEmployee[i].first_name=req.body.first_name;
-            TbrEmployee[i].last_name=req.body.last_name;
-            TbrEmployee[i].email=req.body.email;
-            TbrEmployee[i].phone=req.body.phone;
-            TbrEmployee[i].age=req.body.age;
-            TbrEmployee[i].job_title=req.body.job_title;
-            TbrEmployee[i].years_of_experience=req.body.years_of_experience;
-            TbrEmployee[i].salary=req.body.salary;
-            TbrEmployee[i].department=req.body.department;
-            message = `Details for Employee ${TbrEmployee[i].emp_id} are Updated Successfully`;
-            break;
-
-        }
+  let fname = req.body.first_name;
+  if (fname != null) fname = fname;
+  let lname = req.body.last_name;
+  if (lname != null) lname = lname;
+  let emailId = req.body.email;
+  if (emailId != null) emailId = emailId.toLowerCase();
+  let empId = req.body.emp_id;
+  if (empId != null) empId = empId.toUpperCase();
+  let fpre = req.body.prefixFirstName;
+  let lpre = req.body.prefixLastName;
+  console.log(fname);
+  console.log(lname);
+  let FregexQuery = fname;
+  let LregexQuery = lname;
+  if (fpre == "Start with" && fname!="") {
+    fname = "^" + fname + ".*";
+    FregexQuery = new RegExp(fname, "i");
+  } else if (fpre == "Contains" && fname!="" ) {
+    fname = ".*" + fname + ".*";
+    FregexQuery = new RegExp(fname, "i");
+  }
+  if (lpre == "Start with" && lname!="") {
+    lname = "^" + lname + ".*";
+    LregexQuery = new RegExp(lname, "i");
+  } else if (lpre == "Contains" && lname!="") {
+    lname = ".*" + lname + ".*";
+    LregexQuery = new RegExp(lname, "i");
+  }
+  console.log(FregexQuery);
+  console.log(LregexQuery);
+  let data = [];
+  if (fpre == "Exact Match" || lpre == "Exact Match") {
+    if (fpre == "Exact Match" && lpre != "Exact Match") {
+      data = await TbrEmployeeModel.find({
+        $or: [
+          {
+            $and: [
+              { first_name: fname },
+              { last_name: { $regex: LregexQuery } } , { DEL_IND : {$ne : 'Y'} }
+            ],
+          },
+          { email: emailId  ,  DEL_IND : {$ne : 'Y'}},
+          { emp_id: empId ,  DEL_IND : {$ne : 'Y'}},
+        ],
+      });
+    } else if (fpre != "Exact Match" && lpre == "Exact Match") {
+      data = await TbrEmployeeModel.find({
+        $or: [
+          {
+            $and: [
+              { first_name: { $regex: FregexQuery } },
+              { last_name: lname },  { DEL_IND : {$ne : 'Y'} }
+            ],
+          },
+          { email: emailId , DEL_IND : {$ne : 'Y'}  },
+          { emp_id: empId  ,  DEL_IND : {$ne : 'Y'} },
+        ],
+      });
+    } else if (fpre == "Exact Match" && lpre == "Exact Match") {
+      data = await TbrEmployeeModel.find({
+        $or: [
+          { $and: [{ first_name: fname }, { last_name: lname } , { DEL_IND : {$ne : 'Y'} } ] },
+          { email: emailId  ,  DEL_IND : {$ne : 'Y'} },
+          { emp_id: empId , DEL_IND : {$ne : 'Y'}  },
+        ],
+      });
     }
+  } else {
+    data = await TbrEmployeeModel.find({
+      $or: [
+        {
+          $and: [
+            { first_name: { $regex: FregexQuery } },
+            { last_name: { $regex: LregexQuery } , }, { DEL_IND : {$ne : 'Y'} }
+          ],
+        },
+        { email: emailId  ,  DEL_IND : {$ne : 'Y'} },
+        { emp_id: empId  ,  DEL_IND : {$ne : 'Y'} },
+      ],
+    });
+  }
 
-
+  if (data) {
     resp.status(200).json({
-        "message": message, 
-        "data": resultJson
-
-    })
-
-})
-
-
-// Post Req for Search Employee Data  /searchSpecificurl 
-router.post("/searchEmployee", (req, resp) => {
-    console.log("Req Reached for /searchEmployee")
-    let data = [];
-    let fname = req.body.first_name;
-    if (fname != null)
-        fname = fname.toLowerCase();
-    let lname = req.body.last_name;
-    if (lname != null)
-        lname = lname.toLowerCase();
-    let emailId = req.body.email;
-    if (emailId != null)
-        emailId = emailId.toLowerCase();
-    let empId = req.body.emp_id;
-    if (empId != null)
-        empId = empId.toLowerCase();
-    let fPre = req.body.prefixFirstName;
-    let lpre = req.body.prefixLastName;
-    console.log(fname)
-    console.log(lname)
-    console.log(emailId)
-    console.log(empId)
-    
-    for (let i = 0; i < TbrEmployee.length; i++) {
-        let entryMade = false;
-        if(TbrEmployee[i].DEL_IND == 'Y')
-          continue;
-        else{
-            if ((fname != null || fname != "") && (lname != null || lname != "")) {
-                if (fPre == "Start with" && lpre == "Start with") {
-                    if (TbrEmployee[i].first_name.toLowerCase().startsWith(fname) && TbrEmployee[i].last_name.toLowerCase().startsWith(lname)) {
-                        data.push(TbrEmployee[i]);
-                        continue;
-                    }
-                }
-                else if (fPre == "Start with" && lpre == "Contains") {
-                    if (TbrEmployee[i].first_name.toLowerCase().startsWith(fname) && TbrEmployee[i].last_name.toLowerCase().includes(lname)) {
-                        data.push(TbrEmployee[i]); continue;
-                    }
-                }
-                else if (fPre == "Start with" && lpre == "Exact Match") {
-                    if (TbrEmployee[i].first_name.toLowerCase().startsWith(fname) && TbrEmployee[i].last_name.toLowerCase() == (lname)) {
-                        data.push(TbrEmployee[i]); continue;
-                    }
-                }
-                else if (fPre == "Contains" && lpre == "Contains") {
-                    if (TbrEmployee[i].first_name.toLowerCase().includes(fname) && TbrEmployee[i].last_name.toLowerCase().includes(lname)) {
-                        data.push(TbrEmployee[i]); continue;
-                    }
-                }
-                else if (fPre == "Contains" && lpre == "Exact Match") {
-                    if (TbrEmployee[i].first_name.toLowerCase().includes(fname) && TbrEmployee[i].last_name.toLowerCase() == (lname)) {
-                        data.push(TbrEmployee[i]); continue;
-                    }
-                }
-                else if (fPre == "Contains" && lpre == "Start with") {
-                    if (TbrEmployee[i].first_name.toLowerCase().includes(fname) && TbrEmployee[i].last_name.toLowerCase().startsWith(lname)) {
-                        data.push(TbrEmployee[i]); continue;
-                    }
-                }
-                else if (fPre == "Exact Match" && lpre == "Exact Match") {
-                    if (TbrEmployee[i].first_name.toLowerCase() == (fname) && TbrEmployee[i].last_name.toLowerCase() == (lname)) {
-                        data.push(TbrEmployee[i]); continue;
-                    }
-                }
-                else if (fPre == "Exact Match" && lpre == "Start with") {
-                    if (TbrEmployee[i].first_name.toLowerCase() == (fname) && TbrEmployee[i].last_name.toLowerCase().startsWith(lname)) {
-                        data.push(TbrEmployee[i]); continue;
-                    }
-                }
-                else if (fPre == "Exact Match" && lpre == "Contains") {
-                    if (TbrEmployee[i].first_name.toLowerCase().startsWith(fname) && TbrEmployee[i].last_name.toLowerCase().includes(lname)) {
-                        data.push(TbrEmployee[i]); continue;
-                    }
-                }
-    
-            }
-            if (emailId != null && emailId != "" && emailId == TbrEmployee[i].email.toLowerCase() && !entryMade) {
-                data.push(TbrEmployee[i]);
-                continue;
-            }
-            if (empId != null && empId != "" && empId == TbrEmployee[i].emp_id.toLowerCase() && !entryMade) {
-                data.push(TbrEmployee[i]);
-                continue;
-            }
-        }
-        
-    }
-    let RecCount = data.length;
-    console.log(RecCount)
-    console.log("sending Back Response.......data : " + data)
-    console.log(data)
+      data: data,
+      message: "OK",
+      success: "true",
+      records_count: data.length,
+    });
+  } else {
     resp.status(200).json({
-        "data": data,
-        "message": "OK",
-        "records_count": RecCount
-    })
-
-})
-
+      message: "No Data Found in DataBase",
+      success: "false",
+    });
+  }
+});
 
 // ContactUs post req notify
-router.post("/contactUs", (req, resp) => {
+router.post("/contactUs", async (req, resp) => {
+  try {
+    console.log(req.body)
+    const data = await contactUsModel.create(req.body);
+    console.log(data);
+    if (data) {
+      resp.status(200).json({
+        message: `Thank you for Connecting , our helpdesk will reach out to you soon!!! Have a Nice Day`,
+        data: data,
+        success: "true",
+        repeated: "false",
+      });
+    } else {
+      resp.status(200).json({
+        message:
+          "Some Error Occured At BackEnd .Try Contacting System Adminstrator",
+        success: "false",
+        repeated: "false",
+      });
+    }
+  } catch (err) {
+    resp.status(500).json({
+      message:
+        "Some Error Occured At BackEnd .Try Contacting System Adminstrator",
+      success: "false",
+      repeated: "false",
+    });
+  }
+});
 
-    contactUs.push(req.body)
-    console.log(contactUs)
-    resp.status(200).json({
-        "message": `Thank you for Connecting , our helpdesk will reach out to you soon!!! Have a Nice Day`,
-         "status" : "OK"
+router.post("/notify", async (req, resp) => {
+  try {
+    const data = await notifyThemModel.create(req.body);
+    console.log(data);
+    if (data) {
+      resp.status(200).json({
+        message: `Thank you ${req.body.fullname} , AM_SOFT will connect with you soon. Have a Nice Day`,
+        data: data,
+        success: "true",
+        repeated: "false",
+      });
+    } else {
+      resp.status(200).json({
+        message:
+          "Some Error Occured At BackEnd .Try Contacting System Adminstrator",
+        success: "false",
+        repeated: "false",
+      });
+    }
+  } catch (err) {
+    resp.status(500).json({
+      message:
+        "Some Error Occured At BackEnd .Try Contacting System Adminstrator",
+      success: "false",
+      repeated: "false",
+    });
+  }
+});
 
-    })
+// Validation Test
 
-})
+async function verifyExsistingEmail(emailId) {
+  const data = await userLoginDeatilsModel.find({
+    emailId: emailId,
+  });
+  console.log(data.length);
+  if (data.length > 0) {
+    return false;
+  } else {
+    return true;
+  }
+}
 
-router.post("/notify", (req, resp) => {
-
-    notifyThem.push(req.body)
-    console.log(notifyThem)
-    resp.status(200).json({
-        "message": `Thank you ${req.body.fullname} , AM_SOFT will connect with you soon. Have a Nice Day`,
-         "status" : "OK"
-    })
-
-})
+async function verifyExsistingEmailTBREmployee(emailId) {
+  const data = await TbrEmployeeModel.find({
+    email: emailId,
+  });
+  console.log(data.length);
+  if (data.length > 0) {
+    return false;
+  } else {
+    return true;
+  }
+}
 
 module.exports = router;

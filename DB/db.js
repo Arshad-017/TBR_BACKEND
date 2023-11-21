@@ -4903,8 +4903,6 @@ var notifyThem = [
 
 ];
 
-module.exports = {
-    TbrEmployee, userLoginDeatils,contactUs,notifyThem
-}
+
 
 
