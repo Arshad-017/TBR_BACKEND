@@ -1,6 +1,8 @@
 const mongoose = require('mongoose')
-
-mongoose.connect('mongodb://127.0.0.1:27017/K0077DBATBR').then(()=> console.log('Connection of DB is successfull!!!'))
+const env = require('dotenv').config();  // parsed
+const DB_URL = env.parsed.DB_URL;
+mongoose.connect(`${DB_URL}`)
+.then(()=> console.log('Connection of DB is successfull!!!'))
 
 
 //  Schema
