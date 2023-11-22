@@ -76,7 +76,7 @@ router.post("/registerUser", async (req, resp) => {
  // resp.status(200).json(userLoginDeatils);
 //});
 
-// get req for Employee Data
+// get req for Employee Data 
 router.get("/view", async (req, resp) => {
   try {
     const data = await TbrEmployeeModel.find({ DEL_IND: { $ne: "Y" } });
@@ -85,11 +85,37 @@ router.get("/view", async (req, resp) => {
         message: "Data Fetch from Db",
         success: "true",
         data: data,
+        records_count : data.length
       });
     } else {
       resp.status(200).json({
         message: "No Data in DataBase......",
+        success: "true", records_count : data.length
+      });
+    }
+  } catch (err) {
+    resp.status(500).json({
+      message:
+        "Some Error Occured At BackEnd .Try Contacting System Adminstrator",
+      success: "false",
+    });
+  }
+});
+
+// get req for Employee Data Archived
+router.get("/archiveView", async (req, resp) => {
+  try {
+    const data = await TbrEmployeeModel.find({ DEL_IND: 'Y' });
+    if (data.length > 0) {
+      resp.status(200).json({
+        message: "Data Fetch from Db",
         success: "true",
+        data: data, records_count : data.length
+      });
+    } else {
+      resp.status(200).json({
+        message: "No Data in DataBase......",
+        success: "true", records_count : data.length
       });
     }
   } catch (err) {
@@ -176,7 +202,7 @@ router.post("/delete", async (req, resp) => {
 
     const data = await TbrEmployeeModel.findOneAndUpdate(
       { emp_id: empId, DEL_IND: { $ne: "Y" } },
-      { DEL_IND: "Y" }
+       req.body
     );
     if (data) {
       resp.status(200).json({
